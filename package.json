@@ -1,0 +1,24 @@
+{
+  "name": "entrega-uno-elianewilson",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Entrega 1 usando la plantilla Project template with Express and Handlebars",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "keywords": [],
+  "author": "Eliane Wilson ",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-mongo": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "express": "^4.18.2",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^7.5.2",
+    "session-file-store": "^1.5.0"
+  }
+}
