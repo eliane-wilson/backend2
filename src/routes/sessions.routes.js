@@ -1,107 +1,137 @@
-import {Router} from 'express';
-import userModel from "../models/userModel.js";
-import { createHash, isValidPassword } from "../utils/bcrypt.js";
+import { Router } from "express";
+import passport from "passport";
+import jwt from "jsonwebtoken";
+import UserDTO from "../dto/userDTO.js";
 import { generateToken } from "../utils/jwt.js";
-import { auth } from "../middleware/auth.middleware.js";
-
+import { userService } from "../services/index.js";
 const router = Router();
 
+router.get(
+  "/current",
+  passport.authenticate("current", { session: false }),
+  (req, res) => {
+    const user = new UserDTO(req.user);
 
-
-router.get("/current", auth, async (req, res)=>{
     res.send({
-        status: "success",
-        user: req.user
+      status: "success",
+      user
     });
-});
-
-
-router.use(json());
+  }
+);
 
 router.post("/register", async (req, res) => {
-    const { first_name, last_name, age, email, password } = req.body;
+  try {
+    await userService.registerUser(req.body);
 
-    try {
-        const exists = await userModel.findOne({ email });
-        if (exists) {
-            return res.status(400);
-            res.send("Usuario ya existe");
-        }
-
-        const newUser = await userModel.create({first_name, last_name, age, email, password: createHash(password)
-        });
-
-        res.send({
-            status: "success",
-            message: "Usuario registrado"
-        });
-
-    } catch (error) {
-        res.status(500);
-        res.send(error.message);
-    }
-});
-
-router.post("/login", async (req, res)=>{
-    try{
-        const {email, password}= req.body;
-         const user = await userModel.findOne({ email });
-             if (!user) {
-                return res.status(400);
-                res.send("Usuario no encontrado");
-             }
-
-            if (!isValidPassword(user, password)) {
-                return res.status(400);
-                res.send("Contraseña incorrecta");
-            }
-        const token = generateToken(user);
-        res.send({
-         status: "success",
-         message: "login exitoso ",
-         token
-        });
-    } catch (error) {
-        res.status(500);
-        res.send(error.message);
-    }
-});
-
-router.get('/email/:email', async (req, res) => {
-    const email = req.params.email;
-
-    try {
-        const user = await userModel.findOne({ email }) .select (- 'password');
-
-        if (!user) {
-            return res.status(404).json({
-                status: 'error',
-                message: 'Usuario no encontrado'
-            });
-        }
-
-        res.json({
-            status: 'success',
-            payload: user
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            status: 'error',
-            message: error.message
-        });
-    }
-});
-
-router.post("/logout",async(req, res)=>{
-    
     res.send({
-        status: "success",
-        message: "sesion cerrada"
+      status: "success",
+      message: "Usuario registrado"
     });
+
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
 });
 
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
+    const user = await userService.loginUser(email, password);
+
+    const token = generateToken(user);
+
+    res.send({
+      status: "success",
+      message: "Login exitoso",
+      token
+    });
+
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+});
+
+router.get("/email/:email", async (req, res) => {
+  try {
+    const user = await userService.getUserByEmail(req.params.email);
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "Usuario no encontrado"
+      });
+    }
+
+    const { password, ...safeUser } = user.toObject();
+
+    res.json({
+      status: "success",
+      payload: safeUser
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message
+    });
+  }
+});
+
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const user = await userService.getUserByEmail(req.body.email);
+
+    if (!user) {
+      return res.status(404).send("Usuario no encontrado");
+    }
+
+    const token = jwt.sign(
+      { email: user.email },
+      process.env.RESET_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const link = `http://localhost:8080/reset-password?token=${token}`;
+
+    res.send({
+      status: "success",
+      message: "Link de recuperación generado",
+      link
+    });
+
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).send("Password requerido");
+    }
+
+    const decoded = jwt.verify(token, process.env.RESET_SECRET);
+
+    await userService.updatePassword(decoded.email, newPassword);
+
+    res.send({
+      status: "success",
+      message: "Contraseña actualizada"
+    });
+
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+});
+
+router.post("/logout", (req, res) => {
+  res.send({
+    status: "success",
+    message: "Sesión cerrada"
+  });
+});
 
 export default router;
-
