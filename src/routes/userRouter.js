@@ -69,7 +69,6 @@ router.put('/:uid', async (req, res) => {
     }
 });
 
-// Eliminar un usuario
 router.delete('/:uid', async (req, res) => {
     const uid = req.params.uid;
     try {
