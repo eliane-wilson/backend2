@@ -11,7 +11,7 @@ import { cartRepository } from "./cart.js";
 
 const userDAO = new UserDAO();
 const userRepository = new UserRepository(userDAO);
-export const userService = new UserService(userRepository);
+export const userService = new UserService(userRepository, cartRepository);
 
 const ticketDAO = new TicketDAO();
 const ticketRepository = new TicketRepository(ticketDAO);

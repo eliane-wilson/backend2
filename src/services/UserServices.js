@@ -1,9 +1,10 @@
 import { createHash, isValidPassword } from "../utils/bcrypt.js";
 
 export default class UserService {
-  constructor(repository) {
-    this.repository = repository;
-  }
+  constructor(repository, cartRepository) {
+  this.repository = repository;
+  this.cartRepository = cartRepository;
+}
 
   registerUser = async (data) => {
     const exists = await this.repository.getUserByEmail(data.email);
@@ -11,6 +12,9 @@ export default class UserService {
     if (exists) {
       throw new Error("Usuario ya existe");
     }
+    const cart = await this.cartRepository.createCart();
+
+    data.cart = cart._id;
 
     data.password = createHash(data.password);
 
