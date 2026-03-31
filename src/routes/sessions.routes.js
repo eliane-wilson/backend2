@@ -108,7 +108,7 @@ router.post("/forgot-password", async (req, res) => {
 router.post("/reset-password", async (req, res) => {
   try {
     const { token } = req.query;
-    const { password } = req.body;
+    const { newPassword } = req.body;
 
     if (!newPassword) {
       return res.status(400).send("Password requerido");

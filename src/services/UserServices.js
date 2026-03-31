@@ -38,6 +38,8 @@ export default class UserService {
   updatePassword = async (email, newPassword) => {
     const user = await this.repository.getUserByEmail(email);
 
+    if (!user) throw new Error("Usuario no encontrado");
+
     if (isValidPassword(user, newPassword)) {
       throw new Error("No podés usar la misma contraseña");
     }
